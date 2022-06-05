@@ -1,0 +1,18 @@
+{
+    "id": "highway-mod-custom-v0",
+    "import_module": "highway_env",
+    "controlled_vehicles": 1,
+    "vehicles_count" : 2,
+    "action": {
+        "type": "MultiAgentAction",
+        "action_config": {
+            "type": "DiscreteMetaAction"
+        }
+    },
+    "observation": {
+        "type": "MultiAgentObservation",
+        "observation_config": {
+            "type": "Kinematics"
+        }
+    }
+}
