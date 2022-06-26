@@ -11,9 +11,9 @@ agent_config = 'rl-agents/scripts/configs/HighwayModEnv/agents/DQNAgent/dqn.json
 
 env = load_environment(env_config)
 agent = load_agent(agent_config, env)
-evaluation = Evaluation(env, agent, num_episodes=10000, recover=True)
-# evaluation.load_agent_model("model_saved/25/checkpoint-8000.tar")
-# evaluation.test()
-evaluation.train()
+evaluation = Evaluation(env, agent, num_episodes=100, recover=True)
+evaluation.load_agent_model("model_saved/55/checkpoint-8000.tar")
+evaluation.test()
+# evaluation.train()
 #if train model please comment 2 line 15 and 6 and uncomment line 17
 env.close()

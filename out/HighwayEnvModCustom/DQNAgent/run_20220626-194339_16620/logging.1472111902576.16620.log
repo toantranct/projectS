@@ -1,0 +1,9 @@
+[rl_agents.trainer.evaluation:WARNING] No pre-trained model found at the desired location. 
+[rl_agents.trainer.evaluation:WARNING] No pre-trained model found at the desired location. 
+[rl_agents.trainer.evaluation:INFO] Episode 0 score: 8.3 
+[rl_agents.trainer.evaluation:INFO] Episode 1 score: 8.3 
+[rl_agents.trainer.evaluation:INFO] Episode 2 score: 8.3 
+[rl_agents.trainer.evaluation:INFO] Episode 3 score: 8.3 
+[rl_agents.trainer.evaluation:INFO] Episode 4 score: 8.3 
+[rl_agents.trainer.evaluation:INFO] Episode 5 score: 8.3 
+[rl_agents.trainer.evaluation:INFO] Episode 6 score: 8.3 
