@@ -31,19 +31,19 @@ class HighwayEnvMod(AbstractEnv):
             },
             "screen_width": 1300,
             "screen_height": 150,
-            "vehicles_count": 15,
+            "vehicles_count": 2,
             "controlled_vehicles": 1,
             "initial_lane_id": None,
             "duration": 40,  # [s]
             "ego_spacing": 2,
             "vehicles_density": 1,
-            "collision_reward": -1,  # The reward received when colliding with a vehicle.
+            "collision_reward": -10,  # The reward received when colliding with a vehicle.
             "right_lane_reward": 0.1,  # The reward received when driving on the right-most lanes, linearly mapped to
             # zero for other lanes.
             "high_speed_reward": 0.4,  # The reward received when driving at full speed, linearly mapped to zero for
             # lower speeds according to config["reward_speed_range"].
             "lane_change_reward": 0,  # The reward received at each lane change action.
-            "reward_speed_range": [20, 30],
+            "reward_speed_range": [15, 35],
             "offroad_terminal": False
         })
         return config
@@ -59,7 +59,7 @@ class HighwayEnvMod(AbstractEnv):
                 """
         net = RoadNetwork()
         start = 0
-        length = 800
+        length = 400
         lanes = 3
         nodes_str = ("0", "1")
         for lane in range(lanes):
@@ -67,7 +67,7 @@ class HighwayEnvMod(AbstractEnv):
             end = np.array([start + length, lane * StraightLane.DEFAULT_WIDTH])
             if lane == 1:
                 # pass
-                pos1 = [end[0] / 3 + 50, lane * StraightLane.DEFAULT_WIDTH]
+                pos1 = [end[0] / 2 + 100, lane * StraightLane.DEFAULT_WIDTH]
             if lane == 2:
                 pos2 = [pos1[0] + 50, lane * StraightLane.DEFAULT_WIDTH]
             line_types = [LineType.CONTINUOUS_LINE if lane == 0 else LineType.STRIPED,
@@ -91,9 +91,17 @@ class HighwayEnvMod(AbstractEnv):
         other_vehicles_type = utils.class_from_path(self.config["other_vehicles_type"])
         self.controlled_vehicles = []
         spawn_points_s = []
-        points = [5, 20, 40, 62, 75, 90, 105]
+        points = [100, 125, 150, 175, 190]
         tmp = []
         count = 0
+        x = StraightLane.DEFAULT_WIDTH
+        p1 = [
+            [(170, 1), (190, 1)],
+            [(170, 1), (185, 1), (195, 2)],
+            [(180, 0), (170, 1), (185, 1), (195, 2)],
+            [(180, 0), (170, 1), (185, 1), (173, 2), (195, 2)]
+        ]
+        saiSo = 100
         for lane in range(3):
             for point in points:
                 spawn_points_s.append([point, lane])
@@ -103,32 +111,84 @@ class HighwayEnvMod(AbstractEnv):
         spawn_point_s_c = np.random.choice(tmp, num_CAV + num_HDV, replace=False)
 
         spawn_point_s_c = list(spawn_point_s_c)
-        # # remove the points to avoid duplicate
-        # for a in spawn_point_s_c:
-        #     spawn_point_s_c.remove(a)
+        speed = 15
 
-        # initial speed with noise and location noise
-        initial_speed = np.random.rand(num_CAV + num_HDV) * 2 + 25  # range from [25, 27]
-        loc_noise = np.random.rand(num_CAV + num_HDV) * 3 - 1.5  # range from [-1.5, 1.5]
-        initial_speed = list(initial_speed)
-        loc_noise = list(loc_noise)
-        speed = 25
+        num_total = num_CAV + num_HDV
+        if num_total == 5:
+            make_car_point = [
+                [110, 0],
+                [90, 1], [130, 1],
+                [80, 2], [125, 2]
+            ]
+            make_cav_point = [
+                [make_car_point[1]],
+                [make_car_point[1], make_car_point[4]],
+                [make_car_point[0], make_car_point[2], make_car_point[3]],
+                [make_car_point[0], make_car_point[1], make_car_point[3], make_car_point[4]],
+                [make_car_point[0], make_car_point[1], make_car_point[2], make_car_point[3], make_car_point[4]]
+            ]
+            make_hav_point = [
+                [make_car_point[2]],
+                [make_car_point[1], make_car_point[4]],
+                [make_car_point[0], make_car_point[2], make_car_point[3]],
+                [make_car_point[0], make_car_point[2], make_car_point[3], make_car_point[4]]
+            ]
+            for i in range(num_CAV):
+                point, lane = make_cav_point[num_CAV - 1][i]
+                ego_vehicle = self.action_type.vehicle_class(road, road.network.get_lane(("0", "1", lane)).position(point, 0), speed=speed)
+                self.controlled_vehicles.append(ego_vehicle)
+                road.vehicles.append(ego_vehicle)
 
-        """spawn the CAV on the straight road first"""
-        for _ in range(num_CAV):
-            p, l = spawn_points_s[spawn_point_s_c.pop(0)]
-            ego_vehicle = self.action_type.vehicle_class(road, road.network.get_lane(("0", "1", l)).position(
-                p + loc_noise.pop(0), 0), speed=speed)
-            self.controlled_vehicles.append(ego_vehicle)
-            road.vehicles.append(ego_vehicle)
+            for index in range(num_HDV):
+                point, lane = make_hav_point[num_HDV - 1][index]
+                road.vehicles.append(
+                    other_vehicles_type(road, road.network.get_lane(("0", "1", lane)).position(point, 0), speed=speed))
 
-        """spawn the HDV on the main road first"""
-        for _ in range(num_HDV):
-            p, l = spawn_points_s[spawn_point_s_c.pop(0)]
-            road.vehicles.append(
-                other_vehicles_type(road, road.network.get_lane(("0", "1", l)).position(
-                    p + loc_noise.pop(0), 0),
-                                    speed=speed))
+        elif num_total == 2:
+            if num_CAV == 1:
+                p, l = p1[0][0]
+                ego_vehicle = self.action_type.vehicle_class(road, road.network.get_lane(("0", "1", 2)).position(250 - saiSo, 0), speed=speed)
+                self.controlled_vehicles.append(ego_vehicle)
+                road.vehicles.append(ego_vehicle)
+                p = p1[0][1][0]
+                road.vehicles.append(
+                        other_vehicles_type(road, road.network.get_lane(("0", "1", 1)).position(250 - saiSo, 0), speed=speed))
+
+            else:
+                # num_CAV = 2 && HDV = 0
+                pass
+        elif num_total == 3 and num_CAV == 2:
+                p, l = p1[0][0]
+                ego_vehicle = self.action_type.vehicle_class(road,
+                                                             road.network.get_lane(("0", "1", 2)).position(250 - saiSo,
+                                                                                                           0),
+                                                             speed=speed)
+                self.controlled_vehicles.append(ego_vehicle)
+                road.vehicles.append(ego_vehicle)
+                ego_vehicle = self.action_type.vehicle_class(road,
+                                                             road.network.get_lane(("0", "1", 2)).position(200 - saiSo,
+                                                                                                           0),
+                                                             speed=speed)
+                self.controlled_vehicles.append(ego_vehicle)
+                road.vehicles.append(ego_vehicle)
+                p = p1[0][1][0]
+                road.vehicles.append(
+                    other_vehicles_type(road, road.network.get_lane(("0", "1", 1)).position(250 - saiSo, 0),
+                                        speed=speed))
+
+        else:
+            """spawn the CAV on the straight road first"""
+            for _ in range(num_CAV):
+                p, l = spawn_points_s[spawn_point_s_c.pop(0)]
+                ego_vehicle = self.action_type.vehicle_class(road, road.network.get_lane(("0", "1", l)).position(p, 0), speed=speed)
+                self.controlled_vehicles.append(ego_vehicle)
+                road.vehicles.append(ego_vehicle)
+
+            """spawn the HDV on the main road first"""
+            for _ in range(num_HDV):
+                p, l = spawn_points_s[spawn_point_s_c.pop(0)]
+                road.vehicles.append(
+                    other_vehicles_type(road, road.network.get_lane(("0", "1", l)).position(p, 0), speed=speed))
 
     def _reward(self, action: Action) -> float:
         """
@@ -157,8 +217,7 @@ class HighwayEnvMod(AbstractEnv):
         return any(vehicle.crashed for vehicle in self.controlled_vehicles) or \
             self.steps >= self.config["duration"] or \
             (self.config["offroad_terminal"] and not self.vehicle.on_road) or \
-            all(vehicle.position[0] > 800 for vehicle in self.controlled_vehicles)
-
+            all(vehicle.position[0] > 500 for vehicle in self.controlled_vehicles)
     def _cost(self, action: int) -> float:
         """The cost signal is the occurrence of collision."""
         return float(self.vehicle.crashed)
@@ -175,8 +234,8 @@ class HighwayEnvModCustom(HighwayEnvMod):
     def default_config(cls) -> dict:
         cfg = super().default_config()
         cfg.update({
-            "vehicles_count": 20,
-            "controlled_vehicles": 4
+            "vehicles_count": 2,
+            "controlled_vehicles": 1
         })
         return cfg
 

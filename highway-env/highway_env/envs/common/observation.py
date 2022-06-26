@@ -179,7 +179,6 @@ class KinematicObservation(ObservationType):
     def normalize_obs(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Normalize the observation values.
-
         For now, assume that the road is straight along the x axis.
         :param Dataframe df: observation data
         """
@@ -210,22 +209,34 @@ class KinematicObservation(ObservationType):
                                                          count=self.vehicles_count - 1,
                                                          see_behind=self.see_behind,
                                                          sort=self.order == "sorted")
+        # add Chuong ngai vat
+        # neighbour_vehicles
+        next_car_following, _ = self.env.road.neighbour_vehicles(self.observer_vehicle)
+
+        distance = self.env.PERCEPTION_DISTANCE
+        if next_car_following and next_car_following.lane_distance_to(self.observer_vehicle) < distance:
+            close_vehicles.append(next_car_following)
+            # pass
+        if self.order:
+            close_vehicles = sorted(close_vehicles, key=lambda v: abs(self.observer_vehicle.lane_distance_to(v)))
+
         if close_vehicles:
             origin = self.observer_vehicle if not self.absolute else None
             df = pd.concat([df, pd.DataFrame.from_records(
                 [v.to_dict(origin, observe_intentions=self.observe_intentions)
-                 for v in close_vehicles[-self.vehicles_count + 1:]])[self.features]], ignore_index=True)
-            # df = df.append(pd.DataFrame.from_records(
+                 for v in close_vehicles[-self.vehicles_count + 1:]])[self.features]],
+                           ignore_index=True)
+            # df = pd.concat([df, pd.DataFrame.from_records(
             #     [v.to_dict(origin, observe_intentions=self.observe_intentions)
-            #      for v in close_vehicles[-self.vehicles_count + 1:]])[self.features],
+            #      for v in close_vehicles[-self.vehicles_count + 1:]])[self.features]],
             #                ignore_index=True)
+
         # Normalize and clip
         if self.normalize:
             df = self.normalize_obs(df)
         # Fill missing rows
         if df.shape[0] < self.vehicles_count:
             rows = np.zeros((self.vehicles_count - df.shape[0], len(self.features)))
-            # df = df.append(pd.DataFrame(data=rows, columns=self.features), ignore_index=True)
             df = pd.concat([df, pd.DataFrame(data=rows, columns=self.features)], ignore_index=True)
         # Reorder
         df = df[self.features]
@@ -527,9 +538,9 @@ class ExitObservation(KinematicObservation):
                                                          see_behind=self.see_behind)
         if close_vehicles:
             origin = self.observer_vehicle if not self.absolute else None
-            df = df.append(pd.DataFrame.from_records(
+            df = pd.concat([df, pd.DataFrame.from_records(
                 [v.to_dict(origin, observe_intentions=self.observe_intentions)
-                 for v in close_vehicles[-self.vehicles_count + 1:]])[self.features],
+                 for v in close_vehicles[-self.vehicles_count + 1:]])[self.features]],
                            ignore_index=True)
         # Normalize and clip
         if self.normalize:
@@ -537,7 +548,7 @@ class ExitObservation(KinematicObservation):
         # Fill missing rows
         if df.shape[0] < self.vehicles_count:
             rows = np.zeros((self.vehicles_count - df.shape[0], len(self.features)))
-            df = df.append(pd.DataFrame(data=rows, columns=self.features), ignore_index=True)
+            df = pd.concat([df, pd.DataFrame(data=rows, columns=self.features)], ignore_index=True)
         # Reorder
         df = df[self.features]
         obs = df.values.copy()

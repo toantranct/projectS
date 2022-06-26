@@ -3,7 +3,7 @@ import logging
 from typing import List, Tuple, Dict, TYPE_CHECKING, Optional
 
 from highway_env.road.lane import LineType, StraightLane, AbstractLane, lane_from_config
-from highway_env.vehicle.objects import Landmark
+from highway_env.vehicle.objects import Landmark, Obstacle
 
 if TYPE_CHECKING:
     from highway_env.vehicle import kinematics, objects
@@ -358,6 +358,7 @@ class Road(object):
         for v in self.vehicles + self.objects:
             if v is not vehicle and not isinstance(v, Landmark):  # self.network.is_connected_road(v.lane_index,
                 # lane_index, same_lane=True):
+                # is Obstacle
                 s_v, lat_v = lane.local_coordinates(v.position)
                 if not lane.on_lane(v.position, s_v, lat_v, margin=1):
                     continue

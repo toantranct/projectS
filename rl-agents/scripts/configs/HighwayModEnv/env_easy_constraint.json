@@ -1,5 +1,5 @@
 {
-    "id": "highway-v0",
+    "id": "highway-mod-custom-v0",
     "import_module": "highway_env",
     "lanes_count": 2,
     "vehicles_count": 5,

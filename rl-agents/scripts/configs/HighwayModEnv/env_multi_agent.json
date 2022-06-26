@@ -1,8 +1,8 @@
 {
     "id": "highway-mod-custom-v0",
     "import_module": "highway_env",
-    "controlled_vehicles": 1,
-    "vehicles_count" : 2,
+    "controlled_vehicles": 5,
+    "vehicles_count" : 5,
     "action": {
         "type": "MultiAgentAction",
         "action_config": {

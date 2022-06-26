@@ -1,5 +1,5 @@
 {
-    "base_config": "configs/HighwayEnv/agents/DQNAgent/ddqn.json",
+    "base_config": "rl-agents/scripts/configs/HighwayModEnv/agents/DQNAgent/ddqn.json",
     "model": {
         "type": "DuelingNetwork",
         "base_module": {
